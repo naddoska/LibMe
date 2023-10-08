@@ -1,4 +1,9 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'dart:async';
+import 'package:path/path.dart';
+import 'package:sqflite/sqflite.dart';
 
 const List<String> media = <String>[
   'Video Game',
@@ -8,8 +13,20 @@ const List<String> media = <String>[
   'Series'
 ];
 
-void main() {
+late Future<Database> database;
+
+void main() async {
+  stdout.writeln("test1");
   runApp(const MyApp());
+  WidgetsFlutterBinding.ensureInitialized();
+  database = openDatabase(
+    join(await getDatabasesPath(), 'library.db'),
+    onCreate: (db, version) {
+      return db.execute(
+        'CREATE TABLE video_games(name TEXT, console TEXT, playerNumber INTEGER, genre TEXT, playedBefore BOOLEAN, finishedBefore BOOLEAN )',
+      );
+    },
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -63,22 +80,23 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+  String dropdownValue = media.first;
+  String setValue = "";
 
-  void _incrementCounter() {
+  void accessMediaDropDown(String value) {
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+      dropdownValue = value;
+    });
+  }
+
+  void setTextBasedOnMediaDD() {
+    setState(() {
+      setValue = dropdownValue;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    String dropdownValue = media.first;
     // This method is rerun every time setState is called, for instance as done
     // by the _incrementCounter method above.
     //
@@ -124,9 +142,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   initialSelection: media.first,
                   onSelected: (String? value) {
                     // This is called when the user selects an item.
-                    setState(() {
-                      dropdownValue = value!;
-                    });
+                    accessMediaDropDown(value!);
                   },
                   dropdownMenuEntries:
                       media.map<DropdownMenuEntry<String>>((String value) {
@@ -135,9 +151,12 @@ class _MyHomePageState extends State<MyHomePage> {
                   }).toList(),
                 ),
                 TextButton(
-                    onPressed: _incrementCounter, child: const Text("Add")),
+                    onPressed: () {
+                      setTextBasedOnMediaDD();
+                    },
+                    child: const Text("Add")),
                 Text(
-                  '$_counter',
+                  setValue,
                   style: Theme.of(context).textTheme.headlineMedium,
                 ),
               ],
